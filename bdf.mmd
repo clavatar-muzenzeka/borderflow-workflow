@@ -1,190 +1,419 @@
-%%{init: {'theme': 'base', 'flowchart': {'useMaxWidth': false, 'htmlLabels': true}}}%%
+
+
+
+
+
+Untitled presentation (1).pdf
+PDF
+genere moi un diagramme marmaid le plus detaille possible pour ce workflow, deliite les zonnes d action, montre les acteurs, les etats d entre et de sortie.Utilise la couleur bleu et ocre. toutes les interactions doivent y etre presentes, toutes les conditions aussi,les particulatites, les parallelismes
+
+À partir du document, le workflow n'est pas simplement linéaire. Il contient :
+
+6 groupes d'acteurs
+
+9 étapes métier
+
+2 chemins d'entrée (automatique / manuel)
+
+un processus parallèle de gestion des blocages (Overstanding)
+
+plusieurs états système
+
+plusieurs documents enrichissant progressivement le dossier
+
+des escalades automatiques conditionnelles
+
+des journaux d'audit à chaque étape
+
+des points de décision et de retour
+
+Je te propose un diagramme Mermaid de niveau architecture opérationnelle (version exhaustive).
+
 flowchart LR
 
-%% ==================== PHASE 1 – PRÉ-ALERTE ====================
-subgraph PH1 [Phase 1 : Pré-alerte]
-    A[Fournisseur Intrants<br/>Certificats]
-    B[Transporteur<br/>Pré-alerte Email]
-    C[Analyste Mails Caplaine]
-    D{Digestion automatique<br/>BorderFlow ?}
-    E[OCR Email + Documents]
-    F[Création automatique Convoi]
-    G[Création dossier documentaire<br/>RM + TT]
-    H[Création manuelle Convoi]
-    I[Dossier documentaire vide]
-    J[Analyste Dispatching]
-    K[Assignation Accountability<br/>KCC Logistics / FF]
-    L[Assignation Clearing Agency]
-    M[Emails Fournisseurs]
-    N[Ajout automatique Certificats]
-    O[Dossier Convoi]
-    
-    B --> C
-    A --> C
-    C --> D
-    D -->|Oui| E
-    E --> F
-    E --> G
-    D -->|Non| H
-    H --> I
-    F --> J
-    I --> J
-    G --> J
-    J --> K
-    J --> L
-    A --> M
-    M --> N
-    N --> O
-    K --> O
-    L --> O
+%% ==========================================
+%% COULEURS
+%% ==========================================
+
+classDef actor fill:#0B5394,color:#fff,stroke:#073763,stroke-width:2px
+classDef system fill:#D9EAF7,color:#000,stroke:#0B5394,stroke-width:2px
+classDef process fill:#FFF2CC,color:#000,stroke:#BF9000,stroke-width:2px
+classDef decision fill:#FCE5CD,color:#000,stroke:#B45F06,stroke-width:2px
+classDef state fill:#EAD1DC,color:#000,stroke:#741B47,stroke-width:2px
+classDef alert fill:#F4CCCC,color:#000,stroke:#990000,stroke-width:2px
+
+%% ==========================================
+%% ACTEURS
+%% ==========================================
+
+subgraph ACTEURS["ACTEURS EXTERNES ET INTERNES"]
+
+F[Fournisseur Intrants]:::actor
+
+T[Transporteur]:::actor
+
+AM[Analyste Mails Caplaine]:::actor
+
+AD[Analyste Dispatch Caplaine]:::actor
+
+AG[Agent Douane / Terrain]:::actor
+
+SUP[Superviseur Caplaine]:::actor
+
+OPS[OPS KCC]:::actor
+
+C1[Contrôleur C1]:::actor
+
+C2[Contrôleur C2]:::actor
+
+DIR[Directeur Opérations KCC]:::actor
+
+CA[Clearing Agency]:::actor
+
+DGDA[DGDA Audit]:::actor
+
 end
 
-%% ==================== PHASE 2 – BORDER IN ====================
-subgraph PH2 [Phase 2 : Border In]
-    P[Agent Douane Caplaine<br/>Border In]
-    Q[Saisie Date In]
-    R[Assignation Entry Border]
-    S[Assignation Clearing Agency]
-    T[Création Ticket Overstanding]
-    U{Temps écoulé}
-    U1[CRITICAL<br/>Notification Accountability]
-    U2[OVERSTANDING<br/>Escalade Directeur Ops KCC]
-    U3[URGENT<br/>SMS + Ticket Prioritaire]
-    U4[ALERTE<br/>Direction Caplaine]
-    V[Commentaires Causes Blocage]
-    
-    O --> P
-    P --> Q
-    P --> R
-    P --> S
-    Q --> T
-    T --> U
-    U -->|J+2| U1
-    U -->|J+5| U2
-    U -->|J+10| U3
-    U -->|J+15| U4
-    P --> V
-    V --> T
+%% ==========================================
+%% SYSTEME
+%% ==========================================
+
+subgraph BORDERFLOW["BORDERFLOW"]
+
+AI[Digestion IA + OCR]:::system
+
+DOSSIER[Dossier documentaire numérique]:::system
+
+TIMELINE[Historique / Audit Trail]:::system
+
+TICKET[Ticket Overstanding]:::system
+
+ALERTS[Moteur Alertes]:::system
+
 end
 
-%% ==================== PHASE 3 – DÉCLARATION DOUANIÈRE ====================
-subgraph PH3 [Phase 3 : Déclaration Douanière]
-    W[Déclaration Douanière]
-    X[Saisie Numéro Déclaration]
-    Y[Saisie Régime Douanier]
-    Z[Upload Déclaration Douanière]
-    ZA[Upload Preuve Liquidation]
-    ZB[Superviseur]
-    ZC{Conforme ?}
-    ZD[Validation]
-    ZE[Commentaire Non-Conformité]
-    
-    P --> W
-    W --> X
-    W --> Y
-    W --> Z
-    W --> ZA
-    Z --> ZB
-    ZA --> ZB
-    ZB --> ZC
-    ZC -->|Oui| ZD
-    ZC -->|Non| ZE
-    ZE --> ZB
+%% ==========================================
+%% ETAT INITIAL
+%% ==========================================
+
+START((Début)):::state
+
+PREALERTE["Etat : Pré-alerte créée"]:::state
+
+DISPATCHED["Etat : Dispatché"]:::state
+
+BORDERIN["Etat : Border In"]:::state
+
+DECLARATION["Etat : Déclaration douanière"]:::state
+
+TRANSIT["Etat : KBP Out / Whisky In"]:::state
+
+BORDEROUT["Etat : Border Out"]:::state
+
+ARRIVAL["Etat : Arrivé Site KCC"]:::state
+
+VALIDATED["Etat : Déclaration validée"]:::state
+
+WAREHOUSE["Etat : Entreposé"]:::state
+
+CLOSED((Dossier fermé)):::state
+
+%% ==========================================
+%% PHASE 1 - PREALERTE
+%% ==========================================
+
+START --> F
+
+START --> T
+
+F -->|Certificats qualité\nOrigine\nSanitaires| AM
+
+T -->|Mail pré-alerte\nRM\nPO\nTT\nPlaques| AM
+
+AM --> AI
+
+AI --> D1{Mail analysable ?}:::decision
+
+D1 -->|Oui| AUTO[Création automatique convoi]:::process
+
+D1 -->|Non| MANUAL[Création manuelle convoi]:::process
+
+AUTO --> DOSSIER
+MANUAL --> DOSSIER
+
+AUTO --> PREALERTE
+MANUAL --> PREALERTE
+
+DOSSIER -->|Ajout RM| DOSSIER
+DOSSIER -->|Ajout TT| DOSSIER
+DOSSIER -->|Ajout Certificats| DOSSIER
+
+PREALERTE --> TIMELINE
+
+%% ==========================================
+%% PHASE 2 - DISPATCHING
+%% ==========================================
+
+PREALERTE --> AD
+
+AD --> DISPATCH[Assignation Border Entry]:::process
+
+AD --> ACCOUNT[Assignation Accountability]:::process
+
+DISPATCH --> DISPATCHED
+ACCOUNT --> DISPATCHED
+
+DISPATCHED --> TIMELINE
+
+%% ==========================================
+%% PHASE 3 - BORDER IN
+%% ==========================================
+
+DISPATCHED --> AG
+
+AG --> BI[Saisie Date Border In]:::process
+
+AG --> ACA[Assignation Clearing Agency]:::process
+
+BI --> BORDERIN
+ACA --> BORDERIN
+
+CA -->|Documents physiques| AG
+
+BORDERIN --> TIMELINE
+
+%% ==========================================
+%% PROCESSUS PARALLELE OVERSTANDING
+%% ==========================================
+
+BORDERIN --> ALERTS
+
+subgraph OVERSTANDING["SURVEILLANCE OVERSTANDING"]
+
+ALERTS --> J2{>= J+2 ?}:::decision
+
+J2 -->|Oui| CRIT[CRITICAL]:::alert
+
+CRIT --> CA
+CRIT --> ACCOUNTABLE[Responsable Accountability]:::actor
+
+CRIT --> J5
+
+J5{>= J+5 ?}:::decision
+
+J5 -->|Oui| OVER[OVERSTANDING]:::alert
+
+OVER --> DIR
+
+OVER --> J10
+
+J10{>= J+10 ?}:::decision
+
+J10 -->|Oui| SMS[SMS Urgent]:::alert
+
+SMS --> TICKET
+
+SMS --> J15
+
+J15{>= J+15 ?}:::decision
+
+J15 -->|Oui| IMPACT[Rapport Impact Supply Chain]:::alert
+
+IMPACT --> DIR
+
 end
 
-%% ==================== PHASE 4 – TRANSIT ====================
-subgraph PH4 [Phase 4 : Transit]
-    AA[Agent Poste Transit]
-    AB[KBP Out]
-    AC[Whisky In]
-    AD[Commentaires Blocage Transit]
-    
-    ZD --> AA
-    AA --> AB
-    AA --> AC
-    AA --> AD
-    AD --> T
-end
+AG --> COMMENT[Commentaire blocage]:::process
+COMMENT --> TICKET
 
-%% ==================== PHASE 5 – BORDER OUT ====================
-subgraph PH5 [Phase 5 : Border Out]
-    AE[Border Out]
-    AF[Saisie Date Out]
-    AG[Calcul Overstanding]
-    AH[Fermeture automatique Ticket]
-    
-    AB --> AE
-    AC --> AE
-    AE --> AF
-    AF --> AG
-    AF --> AH
-end
+SUP --> TICKET
 
-%% ==================== PHASE 6 – ARRIVÉE KCC ====================
-subgraph PH6 [Phase 6 : Arrivée KCC]
-    AI[OPS KCC]
-    AJ[Scan TT]
-    AK[Enregistrement Conducteur]
-    AL[Assignation Warehouse]
-    AM[Checklist Réception]
-    AM1[TT Conforme]
-    AM2[Conducteur Vérifié]
-    AM3[Plaques Vérifiées]
-    AM4[Documents Vérifiés]
-    AM5[Etat Produit]
-    AM6[Poids]
-    AN[Upload Photos]
-    AO[Ajout Certificat Entreposage]
-    
-    AG --> AI
-    AI --> AJ
-    AI --> AK
-    AI --> AL
-    AI --> AM
-    AM --> AM1
-    AM --> AM2
-    AM --> AM3
-    AM --> AM4
-    AM --> AM5
-    AM --> AM6
-    AI --> AN
-    AI --> AO
-end
+TICKET --> RESOLU{Blocage résolu ?}:::decision
 
-%% ==================== PHASE 7 – CLÔTURE ====================
-subgraph PH7 [Phase 7 : Clôture]
-    AP[Contrôleur C1]
-    AQ[Vérification Dossier]
-    AR{Tous les documents présents ?}
-    AS[Dossier incomplet]
-    AT[Dossier Complet]
-    AU[Date de Complétude]
-    AV[Clôture du Dossier]
-    
-    AO --> AP
-    AP --> AQ
-    AQ --> AR
-    AR -->|Non| AS
-    AR -->|Oui| AT
-    AT --> AU
-    AU --> AV
-end
+RESOLU -->|Non| TICKET
 
-%% ==================== CONTROLE QUALITÉ ====================
-subgraph CTL [Contrôle Qualité]
-    AW[Contrôleur C2]
-    AX[Contrôle Qualité]
-    AP --> AW
-    AW --> AX
-end
+%% ==========================================
+%% PHASE 4 DECLARATION DOUANIERE
+%% ==========================================
 
-%% ==================== DASHBOARD ====================
-subgraph DB [Dashboard & Analytics]
-    AY[Dashboard & Analytics]
-    AZ[Directeur des Opérations KCC]
-    AV --> AY
-    U2 --> AY
-    U3 --> AY
-    U4 --> AY
-    AY --> AZ
-end
+BORDERIN --> DD
+
+DD[Numéro déclaration\nRégime douanier\nLiquidation]:::process
+
+DD --> DOSSIER
+
+DD --> DECLARATION
+
+DECLARATION --> TIMELINE
+
+%% ==========================================
+%% PHASE 5 TRANSIT
+%% ==========================================
+
+DECLARATION --> TRANSITPROC[KBP Out / Whisky In]:::process
+
+TRANSITPROC --> TRANSIT
+
+TRANSIT --> TIMELINE
+
+%% ==========================================
+%% PHASE 6 BORDER OUT
+%% ==========================================
+
+TRANSIT --> BO[Date Border Out]:::process
+
+BO --> CALC[Calcul automatique délai]:::process
+
+CALC --> FINALOVER[Calcul Overstanding définitif]:::process
+
+FINALOVER --> BORDEROUT
+
+BORDEROUT --> TIMELINE
+
+BORDEROUT --> CLOSEOT[Clôture automatique Ticket]:::process
+
+CLOSEOT --> TICKET
+
+%% ==========================================
+%% PHASE 7 ARRIVEE KCC
+%% ==========================================
+
+BORDEROUT --> OPS
+
+OPS --> SCAN[Scan TT]:::process
+
+OPS --> DRIVER[Identification conducteur]:::process
+
+OPS --> FW[Assignation Final Warehouse]:::process
+
+OPS --> CHECK[Checklist contrôle]:::process
+
+OPS --> PHOTO[Upload Photos]:::process
+
+SCAN --> ARRIVAL
+DRIVER --> ARRIVAL
+FW --> ARRIVAL
+CHECK --> ARRIVAL
+PHOTO --> ARRIVAL
+
+ARRIVAL --> TIMELINE
+
+%% ==========================================
+%% PHASE 8 VALIDATION
+%% ==========================================
+
+ARRIVAL --> C1
+
+C1 --> QC{Déclaration conforme ?}:::decision
+
+QC -->|Oui| VALIDATED
+
+QC -->|Non| NC[Commentaire obligatoire]:::process
+
+NC --> C2
+
+C2 --> CORRECTION[Analyse / Escalade]:::process
+
+CORRECTION --> QC
+
+VALIDATED --> TIMELINE
+
+%% ==========================================
+%% PHASE 9 ENTREPOSAGE
+%% ==========================================
+
+VALIDATED --> STORE[Assignation entrepôt final]:::process
+
+STORE --> INVENT[Maj Inventaire]:::process
+
+INVENT --> FICHE[Fiche entreposage]:::process
+
+FICHE --> DOSSIER
+
+FICHE --> WAREHOUSE
+
+WAREHOUSE --> TIMELINE
+
+%% ==========================================
+%% FERMETURE
+%% ==========================================
+
+WAREHOUSE --> REVIEW[Revue finale dossier]:::process
+
+REVIEW --> DOCS[Inspection documents]:::process
+
+REVIEW --> IMGS[Inspection photos]:::process
+
+REVIEW --> HISTORY[Consultation historique]:::process
+
+DOCS --> CLOSEDEC{Dossier complet ?}:::decision
+IMGS --> CLOSEDEC
+HISTORY --> CLOSEDEC
+
+CLOSEDEC -->|Non| C2
+
+CLOSEDEC -->|Oui| CLOSEPROC[Validation fermeture]:::process
+
+CLOSEPROC --> CLOSED
+
+CLOSED --> TIMELINE
+
+%% ==========================================
+%% AUDIT DGDA
+%% ==========================================
+
+DGDA -. Consultation Historique .-> TIMELINE
+DGDA -. Consultation Déclarations .-> DOSSIER
+
+%% ==========================================
+%% DASHBOARD DIRECTION
+%% ==========================================
+
+TIMELINE --> DASH[Reporting & Analytics]:::system
+
+DASH --> DIR
+Ce diagramme représente :
+
+les zones d'acteurs ;
+
+les états d'entrée et de sortie du convoi ;
+
+les branches automatiques et manuelles ;
+
+les processus parallèles d'overstanding ;
+
+les escalades J+2 / J+5 / J+10 / J+15 ;
+
+la gestion documentaire complète ;
+
+la traçabilité (audit trail) ;
+
+les boucles de correction et validation ;
+
+les interactions entre tous les acteurs mentionnés dans le document. 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+Memory full
+Responses may feel less personalized. Upgrade to expand memory, or manage existing memories.
+
+Manage
+
+Get more
+
+
