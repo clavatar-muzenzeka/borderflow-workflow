@@ -1,1 +1,76 @@
 
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0056b3', 'edgeLabelBackground':'#ffffff', 'tertiaryColor': '#eeeeee', 'lineColor': '#0056b3', 'secondaryColor': '#d69e4a', 'mainBkg': '#ffffff', 'noteBkgColor': '#eeeeee', 'fontFamily': 'arial', 'fontSize': '12px'}}}%%
+graph TD
+    classDef blueFill fill:#d9edf7,stroke:#0056b3,stroke-width:2px;
+    classDef ocreFill fill:#fcf8e3,stroke:#d69e4a,stroke-width:2px;
+    classDef KCC_Proc fill:#f5f5f5,stroke:#0056b3,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef CAPLAINE_Proc fill:#f5f5f5,stroke:#d69e4a,stroke-width:2px,stroke-dasharray: 5 5;
+
+    subgraph KCC_Mining_Perimeter
+    
+    direction TB
+        subgraph Operations
+        C1[Contrôleur C1]:::KCC_Proc
+        C2[Contrôleur C2]:::KCC_Proc
+        OPS[OPS KCC]:::KCC_Proc
+        DirOps[Directeur des Opérations KCC]:::KCC_Proc
+        end
+
+        subgraph System
+        Dashboard[Dashboards, Reporting, Analytics]:::blueFill
+        Log_History[Historique du Convoi]:::blueFill
+        end
+    end
+
+    subgraph Caplaine_Logistique_Perimeter
+    direction TB
+        subgraph Roles
+        MailAnalyst[Analyst Mails]:::CAPLAINE_Proc
+        DispatchAnalyst[Analyst Dispatching]:::CAPLAINE_Proc
+        CustomsAgent[Agents en Douane]:::CAPLAINE_Proc
+        FieldAgent[Agents de Terrain]:::CAPLAINE_Proc
+        Supervisor[Superviseur]:::CAPLAINE_Proc
+        end
+
+        subgraph BorderFlow
+        AutoDigestion[Digestion Automatique / OCR]:::ocreFill
+        ConvoiEntry[Vue Opérations: Entrée Convoi]:::ocreFill
+        DocumentFolder[Dossier Documentaire]:::ocreFill
+        end
+    end
+
+    subgraph Fournisseurs_Perimeter
+    Supplier[Fournisseur]:::blueFill
+    end
+
+    subgraph Transporteurs_Perimeter
+    Carrier[Transporteur]:::ocreFill
+    end
+
+    subgraph Clearing_Agencies_Perimeter
+    ClearingAgency[Clearing Agencies]:::ocreFill
+    end
+
+    subgraph DGDA_Perimeter
+    DGDA[DGDA]:::ocreFill
+    end
+
+    Supplier -->|Email Documents| MailAnalyst
+    Supplier -->|Email Documents| AutoDigestion
+    Carrier -->|Pré-alerte Email| MailAnalyst
+    Carrier -->|Pré-alerte Email| AutoDigestion
+    ClearingAgency -->|Documents Physiques| CustomsAgent
+    DGDA -.->|Consultation Historique| Log_History
+
+    MailAnalyst -->|Actions Manuelles| ConvoiEntry
+    DispatchAnalyst -->|Assignation Accountability/Agence| ConvoiEntry
+    CustomsAgent -->|Web/Mobile App| BorderFlow
+    FieldAgent -->|Mobile App| BorderFlow
+    Supervisor -->|Web/Mobile App| BorderFlow
+
+    BorderFlow -.->|Log| Log_History
+    BorderFlow -.->|Data| Dashboard
+    OPS -->|Scan TT / Mobile App| BorderFlow
+    DirOps -.->|Notifications / Accès| Dashboard
+    C1 -->|Web/Mobile App| BorderFlow
+    C2 -->|Web/Mobile App| BorderFlow
