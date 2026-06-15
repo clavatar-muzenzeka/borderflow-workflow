@@ -1,0 +1,63 @@
+flowchart TD
+%% Styles
+classDef step fill:#1a5276, stroke:#f39c12, stroke-width:2px, color:#fff
+classDef input fill:#f5e6ca, stroke:#d4a017, stroke-width:2px, color:#5a3e0b
+classDef output fill:#1a5276, stroke:#f39c12, stroke-width:1.5px, stroke-dasharray:4 4, color:#fff
+classDef decision fill:#f39c12, stroke:#1a5276, stroke-width:2px, color:#1a5276
+
+N1[📥 E1: Email transporteur: RM, PO, TT, plaques + PDF]:::input
+N2{Digestion auto?}:::decision
+N3[Création entrée + dossier auto]:::step
+N4[Saisie manuelle + dossier vide]:::step
+N5[Assign accountability + certificats fournisseurs]:::step
+N6[📤 Dossier avec RM, TT, certificats]:::output
+N7[📥 E2: Date In, Clearing Agency, Entry Border]:::input
+N8[Démarrage timer overstanding]:::step
+N9[Notifications J2/J5/J10/J15]:::step
+N10[Commentaires blocage + ticket]:::step
+N11[📤 Date In, timer, ticket]:::output
+N12[📥 E3: N° déclaration, régime, documents scannés]:::input
+N13[Enrichissement dossier]:::step
+N14{Validation superviseur}:::decision
+N15[Label conforme]:::step
+N16[Label non conforme + commentaire]:::step
+N17[📤 Documents validés au dossier]:::output
+N18[📥 E4: Date KBP Out + observation]:::input
+N19[Maj ticket overstanding]:::step
+N20[📤 Date KBP Out]:::output
+N21[📥 E5: Date Out]:::input
+N22[Calcul délai = Out - In, overstanding total, fermeture ticket]:::step
+N23[📤 Délais + ticket clôturé]:::output
+N24[📥 E6: Scan TT + checklist + photos]:::input
+N25[Assign warehouse + certificat entreposage]:::step
+N26{Checklist OK?}:::decision
+N27[Alerte non-conformité]:::step
+N28[📤 Certificat entreposage]:::output
+N29[📥 E7: Tous documents]:::input
+N30{Contrôleur C1: complet?}:::decision
+N31[Statut COMPLET, archivage]:::step
+N32[C2 traite cas complexe]:::step
+N33[📤 Dossier COMPLET final]:::output
+
+N1 --> N2
+N2 -->|OUI| N3 --> N5
+N2 -->|NON| N4 --> N5
+N5 --> N6
+N6 --> N7
+N7 --> N8 --> N9 --> N10 --> N11
+N11 --> N12
+N12 --> N13 --> N14
+N14 -->|Conforme| N15 --> N17
+N14 -->|Non conforme| N16 --> N17
+N17 --> N18
+N18 --> N19 --> N20
+N20 --> N21
+N21 --> N22 --> N23
+N23 --> N24
+N24 --> N25 --> N26
+N26 -->|OUI| N28
+N26 -->|NON| N27 --> N28
+N28 --> N29
+N29 --> N30
+N30 -->|OUI| N31 --> N33
+N30 -->|NON/complexe| N32 --> N30
