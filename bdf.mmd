@@ -1,112 +1,157 @@
-
 flowchart TD
-    %% Acteurs et Rôles
-    subgraph Acteurs
-        %% KCC Mining
-        KCC[KCC Mining]
-        ControleurC1[Contrôleur C1
-        <br>• Met ensemble les documents
-        <br>• Ferme le dossier]
-        ControleurC2[Contrôleur C2
-        <br>• Vérifie les tâches de C1
-        <br>• Gère les cas complexes]
-        OPS_KCC[OPS KCC
-        <br>• Scan le TT à l'arrivée
-        <br>• Valide la checklist
-        <br>• Upload les photos]
-        Directeur_Operations[Directeur des Opérations KCC
-        <br>• Accède aux dashboards
-        <br>• Reçoit reportings/analytics]
-        
-        %% Fournisseurs
-        Fournisseurs[Fournisseurs d'intrants
-        <br>• Aucun accès système
-        <br>• Envoie documents par mail]
-        
-        %% Caplaine Logistique
-        Caplaine_Logistique[Caplaine Logistique]
-        Agent_Douane[Agent en Douane
-        <br>• Transmet documents douaniers
-        <br>• Signale blocages]
-        Agent_Terrain[Agent de Terrain
-        <br>• Signale entrées/sorties
-        <br>• Commente overstanding]
-        Superviseur[Superviseur
-        <br>• Valide actions des agents
-        <br>• Accède aux tickets]
-        
-        %% Transporteurs
-        Transporteurs[Transporteurs
-        <br>• Aucun accès système
-        <br>• Envoie pré-alerte par mail]
-        
-        %% Clearing Agencies
-        Clearing_Agencies[Clearing Agencies
-        <br>• Fournit documents physiques
-        <br>• Déclaration douanière]
-        
-        %% DGDA
-        DGDA[DGDA
-        <br>• Consulte historique
-        <br>• Audit]
-    end
-    
-    %% Étapes du workflow
-    subgraph Workflow
-        A[Étape 1: Pré-alerte] --> B[Étape 2: Arrivée au poste frontalier]
-        B --> C[Étape 3: Déclaration douanière effectuée]
-        C --> D[Étape 4: En transit KBP Out/Whisky In]
-        D --> E[Étape 5: Border Out]
-        E --> F[Étape 6: Arrivée site KCC]
-    end
-    
-    %% Détails des étapes avec rôles
-    A -->|Transporteurs| A1[Envoie mail de pré-alerte]
-    A1 -->|Agent_Douane| A2[Digestion automatique par BorderFlow]
-    A2 -->|Agent_Douane| A3[Crée entrée convoi]
-    A3 -->|Agent_Douane| A4[Dossier documentaire: RM, TT, Certificats]
-    
-    B -->|Agent_Douane| B1[Saisie Date In]
-    B1 -->|Agent_Douane| B2[Assigne Clearing Agency]
-    B1 -->|Agent_Douane| B3[Assigne Entry Border]
-    B1 -->|Agent_Douane| B4[Statut Overstanding]
-    B4 -->|Superviseur| B5[Gère alertes: CRITICAL, OVERSTANDING, SMS, etc.]
-    
-    C -->|Agent_Douane| C1[Saisie déclaration douanière]
-    C1 -->|Superviseur| C2[Vérifie conformité]
-    C2 -->|Superviseur| C3[Labeling: Conforme/Non conforme]
-    
-    D -->|Agent_Terrain| D1[Saisie Date KBP Out]
-    D1 -->|Condition: Si Date Out - Date In > 2 jours| D2[Agent_Terrain: Raison Overstanding]
-    D1 -->|Sinon| D3[Pas de raison]
-    
-    E -->|Agent_Terrain| E1[Saisie Date Out]
-    E1 -->|Système| E2[Calcul délai Overstanding]
-    
-    F -->|OPS_KCC| F1[Scan TT, Date arrival, Conducteur]
-    F1 -->|OPS_KCC| F2[Checklist: TT, Conducteur, Véhicule, Documents, État du produit, Poids]
-    F1 -->|OPS_KCC| F3[Upload photos]
-    F1 -->|OPS_KCC| F4[Ajoute certificat d’entreposage]
-    
-    F -->|ContrôleurC1| F5[Vérifie présence documents]
-    F5 -->|ContrôleurC1| F6[Dossier complet: Statut + Date]
-    
-    %% Logs
-    A -->|Système| Log_A[Historique: Pré-alerte]
-    B -->|Système| Log_B[Historique: Border In]
-    C -->|Système| Log_C[Historique: Liquidation douanière]
-    D -->|Système| Log_D[Historique: KBP Out/Whisky In]
-    E -->|Système| Log_E[Historique: Border Out]
-    F -->|Système| Log_F[Historique: KCC Arrival, Dossier complet]
-    
-    %% Style
-    classDef actor fill:#f9f,stroke:#333;
-    classDef step fill:#bbf,stroke:#333;
-    classDef log fill:#9f9,stroke:#333;
-    classDef condition fill:#ff9,stroke:#333;
-    
-    class KCC,Fournisseurs,Caplaine_Logistique,Transporteurs,Clearing_Agencies,DGDA actor;
-    class ControleurC1,ControleurC2,OPS_KCC,Directeur_Operations,Agent_Douane,Agent_Terrain,Superviseur actor;
-    class A,B,C,D,E,F step;
-    class Log_A,Log_B,Log_C,Log_D,Log_E,Log_F log;
-    class D2 condition;
+
+    %% =========================
+    %% PHASE 1 - PRE-ALERTE
+    %% =========================
+
+    A[Fournisseur Intrants<br/>Certificats]
+    B[Transporteur<br/>Pré-alerte Email]
+
+    B --> C[Analyste Mails Caplaine]
+    A --> C
+
+    C --> D{Digestion automatique<br/>BorderFlow ?}
+
+    D -->|Oui| E[OCR Email + Documents]
+    E --> F[Création automatique Convoi]
+    E --> G[Création dossier documentaire<br/>RM + TT]
+
+    D -->|Non| H[Création manuelle Convoi]
+    H --> I[Dossier documentaire vide]
+
+    F --> J[Analyste Dispatching]
+    I --> J
+    G --> J
+
+    J --> K[Assignation Accountability<br/>KCC Logistics / FF]
+    J --> L[Assignation Clearing Agency]
+
+    A --> M[Emails Fournisseurs]
+    M --> N[Ajout automatique Certificats]
+    N --> O[Dossier Convoi]
+
+    K --> O
+    L --> O
+
+    %% =========================
+    %% PHASE 2 - BORDER IN
+    %% =========================
+
+    O --> P[Agent Douane Caplaine<br/>Border In]
+
+    P --> Q[Saisie Date In]
+    P --> R[Assignation Entry Border]
+    P --> S[Assignation Clearing Agency]
+
+    Q --> T[Création Ticket Overstanding]
+
+    T --> U{Temps écoulé}
+
+    U -->|J+2| U1[CRITICAL<br/>Notification Accountability]
+    U -->|J+5| U2[OVERSTANDING<br/>Escalade Directeur Ops KCC]
+    U -->|J+10| U3[URGENT<br/>SMS + Ticket Prioritaire]
+    U -->|J+15| U4[ALERTE<br/>Direction Caplaine]
+
+    P --> V[Commentaires Causes Blocage]
+    V --> T
+
+    %% =========================
+    %% PHASE 3 - DECLARATION DOUANIERE
+    %% =========================
+
+    P --> W[Déclaration Douanière]
+
+    W --> X[Saisie Numéro Déclaration]
+    W --> Y[Saisie Régime Douanier]
+
+    W --> Z[Upload Déclaration Douanière]
+    W --> ZA[Upload Preuve Liquidation]
+
+    Z --> ZB[Superviseur]
+    ZA --> ZB
+
+    ZB --> ZC{Conforme ?}
+
+    ZC -->|Oui| ZD[Validation]
+    ZC -->|Non| ZE[Commentaire Non-Conformité]
+
+    %% =========================
+    %% PHASE 4 - TRANSIT
+    %% =========================
+
+    ZD --> AA[Agent Poste Transit]
+
+    AA --> AB[KBP Out]
+    AA --> AC[Whisky In]
+    AA --> AD[Commentaires Blocage Transit]
+
+    AD --> T
+
+    %% =========================
+    %% PHASE 5 - BORDER OUT
+    %% =========================
+
+    AB --> AE[Border Out]
+    AC --> AE
+
+    AE --> AF[Saisie Date Out]
+
+    AF --> AG[Calcul Overstanding]
+    AF --> AH[Fermeture automatique Ticket]
+
+    %% =========================
+    %% PHASE 6 - ARRIVEE KCC
+    %% =========================
+
+    AG --> AI[OPS KCC]
+
+    AI --> AJ[Scan TT]
+    AI --> AK[Enregistrement Conducteur]
+    AI --> AL[Assignation Warehouse]
+
+    AI --> AM[Checklist Réception]
+
+    AM --> AM1[TT Conforme]
+    AM --> AM2[Conducteur Vérifié]
+    AM --> AM3[Plaques Vérifiées]
+    AM --> AM4[Documents Vérifiés]
+    AM --> AM5[Etat Produit]
+    AM --> AM6[Poids]
+
+    AI --> AN[Upload Photos]
+    AI --> AO[Ajout Certificat Entreposage]
+
+    %% =========================
+    %% PHASE 7 - CLOTURE
+    %% =========================
+
+    AO --> AP[Contrôleur C1]
+
+    AP --> AQ[Vérification Dossier]
+
+    AQ --> AR{Tous les documents présents ?}
+
+    AR -->|Non| AS[Dossier incomplet]
+    AR -->|Oui| AT[Dossier Complet]
+
+    AT --> AU[Date de Complétude]
+    AU --> AV[Clôture du Dossier]
+
+    %% =========================
+    %% CONTROLE QUALITE
+    %% =========================
+
+    AP --> AW[Contrôleur C2]
+    AW --> AX[Contrôle Qualité]
+
+    %% =========================
+    %% DASHBOARD
+    %% =========================
+
+    AV --> AY[Dashboard & Analytics]
+
+    U2 --> AY
+    U3 --> AY
+    U4 --> AY
+
+    AY --> AZ[Directeur des Opérations KCC]
